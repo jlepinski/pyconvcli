@@ -3,7 +3,25 @@ A convention based CLI framework for python
 
 ### How do I get set up? ###
 
-In the root directory of your project have a entry point that creates the cli object for example if your root module is in a folder called pyconvclitest you would use the following to run the cli as your entrypoint.
+#### step 1
+run the install command
+`pip3 install pyconvcli`
+
+#### step 2
+
+In your project that you want to make a cli be sure to add the main entry point command to the setup.py of your project. i.e.
+``` 
+entry_points={
+        'console_scripts': [
+            'mycli = mycli.cli:main'
+        ],
+    }
+```
+in this case the entrypoint command is mycli and the entry point is the cli file inside the mycli directory of your project. As designed all files that contain cli commands should live in this directory. Please keep in mind that if you use your MANIFEST file to change the locations of your files this may effect your cli.
+
+#### step 3
+
+In the root directory of your project have a directory for your cli with a file that contains an entrypoint for your application as previously mentioned.That entrypoint creates the cli object for example if your root module is in a folder called pyconvclitest you would use the following to run the cli as your entrypoint.
 ``` 
 from pyconvcli import PyConvCli
 import os
@@ -12,6 +30,8 @@ def main():
     cli = PyConvCli('pyconvclitest',os.path.dirname(os.path.realpath(__file__)))
     cli.run()
 ```
+
+#### step 4
 in order to create a command you need to create a class in your project that either ends with _CLI in the name or _CLI_ROOT. if it ends with cli the command will be the file path from the root of your project followed by the function name. If it is _CLI_ROOT it will be the function name followed by the root command of your project
 
 This is an example of the code to add a root command
