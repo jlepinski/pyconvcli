@@ -97,9 +97,9 @@ class PyConvCli():
         for function_name,function_ref in inspect.getmembers(class_ref):
                     if inspect.isfunction(function_ref):
                         parent_path_parser = parsers[modul_name]
-                        if not "collables" in parent_path_parser:
+                        if not "callables" in parent_path_parser:
                             parent_path_parser['callables']={}
-                        if "subparsers" not in parent_path_parser:
+                        if not "subparsers" in parent_path_parser:
                             parent_path_parser['subparsers']=parent_path_parser['parser'].add_subparsers(help="sub commands")
                         parent_path_parser['callables'][function_name] ={
                             "parser": parent_path_parser['subparsers'].add_parser(function_name),
