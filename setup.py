@@ -1,7 +1,6 @@
+import setuptools
 
-from distutils.core import setup
-
-setup(name='pyconvcli',
+setuptools.setup(name='pyconvcli',
       version='0.0.2',
       description='A convention based CLI framework for python',
       author='Joshua Lepinski',
