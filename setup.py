@@ -1,6 +1,5 @@
 
 from distutils.core import setup
-import setuptools
 
 setup(name='pyconvcli',
       version='0.0.2',
