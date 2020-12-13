@@ -67,8 +67,9 @@ class Alternative_CLI_ROOT():
 
 ### Plans for the future. 
 1. I would like to get a small app that runs as a visualized version of the cli so you can run your cli by just filling out some forms or using the forms then copy a string that you can just paste in the terminal to run.
-2. I would consider putting together an object written to a file representing the cli structure at build time of your project using a cmdclass in your setup.py. This would allow us to create the parsers at runtime without loading or inspecting any classes and would allow you to run your project without importing anything but your entrypoint. The benefits of this would be rather small unles you have a very large project.
-3. I need to come up with a convention for configuring details about a subparser. I an thinking of maybe setting up a configuration file where you can add additional metadata for configuring your subparsers without going to multiple places.
+2. I will be creating a cli with the cli tool that will automat setting up a cli project.
+3. I would consider putting together an object written to a file representing the cli structure at build time of your project using a cmdclass in your setup.py. This would allow us to create the parsers at runtime without loading or inspecting any classes and would allow you to run your project without importing anything but your entrypoint. The benefits of this would be rather small unles you have a very large project.
+4. I need to come up with a convention for configuring details about a subparser. I an thinking of maybe setting up a configuration file where you can add additional metadata for configuring your subparsers without going to multiple places.
 
 
 ### Who do I talk to? ###

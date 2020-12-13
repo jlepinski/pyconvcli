@@ -10,8 +10,16 @@ setuptools.setup(name='pyconvcli',
           "Programming Language :: Python :: 3",
           "License :: OSI Approved :: Apache Software License"
       ],
-      packages=['.'],
+      packages=setuptools.find_packages(),
+      include_package_data=True,
       install_requires=[
-          'pydash',
+          'pydash==4.9.0',
+          'stringcase==1.2.0'
+          
       ],
+      entry_points={
+        'console_scripts': [
+            'pyconvcli = pyconvcli.cli:main'
+        ],
+    }
      )

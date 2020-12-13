@@ -1,0 +1,5 @@
+from pyconvcli import ParserArgType
+class {name}_CLI():
+    {cli_path}
+    def say_hello(self,name:ParserArgType(type=str,required=True)):
+        print(f'hello {{name}}. Thank you for introducing yourself. I am your cli {name}')
