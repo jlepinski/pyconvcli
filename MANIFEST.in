@@ -1,1 +1,1 @@
-include pyconvcli/resources/*.txt
+include cli/resources/*.txt

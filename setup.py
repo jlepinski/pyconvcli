@@ -26,7 +26,7 @@ setuptools.setup(name='pyconvcli',
       ],
       entry_points={
         'console_scripts': [
-            'pyconvcli = pyconvcli.cli:main'
+            'pyconvcli = cli.cli:main'
         ],
     }
      )
