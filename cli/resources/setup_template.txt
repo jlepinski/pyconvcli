@@ -1,0 +1,14 @@
+import setuptools
+
+setuptools.setup(
+        {profile_info}
+        packages=setuptools.find_packages(),
+        install_requires=[
+            'pyconvcli', 
+        ],
+        entry_points={{
+        'console_scripts': [
+            '{cli_entry_point} = {entry_package}.cli:main'
+        ],
+    }}
+)
