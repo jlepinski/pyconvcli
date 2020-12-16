@@ -42,7 +42,7 @@ class PyConvCli():
                     module_name = name.split('.py')[0]
                 
                     if not root == first_root:
-                        path_array = root[len(first_root)+1:len(root)].split('/')
+                        path_array = root[len(first_root)+1:len(root)].split(os.sep)
                         path_array.append(module_name)
                         module_name = '.'.join(path_array)
                     
