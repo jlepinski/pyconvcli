@@ -70,7 +70,7 @@ class New_CLI():
                     setup_content=f'{setup_content}{variable}="{locals()[variable]}",\n        '
     
             print("created a setup.py file")
-            with open(f'{os.path.dirname(os.path.realpath(__file__))}/resources/setup_template.txt', 'r') as f:
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'resources','setup_template.txt'), 'r') as f:
                 setup_file=f.read().format(profile_info=setup_content.strip(' \t\n\r'), cli_entry_point=entry_point,project_name=name, entry_package=entry_package_name)
                 
                 f = open("setup.py", "w")
