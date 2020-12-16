@@ -1,4 +1,4 @@
-on: [push]
+on: [pull-request]
 jobs:
   run-unit-tests-ubuntu:
     runs-on: ubuntu-latest
