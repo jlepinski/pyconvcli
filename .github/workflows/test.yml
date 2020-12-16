@@ -9,6 +9,11 @@ jobs:
           python-version: '3.9.1'
       - run: python3 setup.py install
       - run: python3 -m unittest -v test/test_pyconvcli.py
+      - run: pyconvcli -h
+      - run: pyconvcli new cli --project_name bananza --root_package_name freya --cli_call_word open_sesame --author me --author_email me@me.com --description 'a long time ago in a galxy far far away someone wrote a cli' --version 0.1.0
+      - run: cd bananza && python3 setup.py install
+      - run: open_sesame hello world say_hello --name Joshua
+
   run-unit-tests-windows:
     runs-on: windows-latest    
     steps:
@@ -18,3 +23,7 @@ jobs:
           python-version: '3.9.1'
       - run: python setup.py install
       - run: python -m unittest -v test/test_pyconvcli.py
+      - run: pyconvcli -h
+      - run: pyconvcli new cli --project_name bananza --root_package_name freya --cli_call_word open_sesame --author me --author_email me@me.com --description 'a long time ago in a galxy far far away someone wrote a cli' --version 0.1.0
+      - run: cd bananza && python setup.py install
+      - run: open_sesame hello world say_hello --name Joshua

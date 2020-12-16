@@ -17,7 +17,6 @@ class New_CLI():
             ):
         self.module(name=project_name)
         os.chdir(project_name)
-        print(root_package_name,project_name)
         self.setup_file(entry_package_name=root_package_name,entry_point=cli_call_word,name=project_name,version=version,author=author,author_email=author_email,description=description)
         self.module(name=root_package_name)
         os.chdir(root_package_name)
@@ -25,8 +24,8 @@ class New_CLI():
         self.module(name="hello")
         os.chdir("hello")
         self.cli_class(class_name="world")
+        print(f'created cli project {project_name}')
         
-        print("TODO:create new cli project")
 
     def cli_class(self,
                 class_name:ParserArgType(type=str, required=True),
@@ -37,7 +36,6 @@ class New_CLI():
                 f = open(f'{stringcase.trimcase(class_name)}.py', "w")
                 f.write(file_content)
                 f.close()
-        print(f'TODO:create new cli class named {class_name}')
 
     def entry_class(self,root_package_name):
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),"resources","entry_class_template.txt"), 'r') as f:
@@ -63,13 +61,11 @@ class New_CLI():
             # if path.exists("setup.py"):
             #     raise Exception ('the setup.py file already exists in this directory')
             assign_if_there = inspect.getfullargspec(self.setup_file).args[3:]
-            print(entry_package_name,name)
             setup_content=""
             for variable in assign_if_there:
                 if locals()[variable]:
                     setup_content=f'{setup_content}{variable}="{locals()[variable]}",\n        '
     
-            print("created a setup.py file")
             with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'resources','setup_template.txt'), 'r') as f:
                 setup_file=f.read().format(profile_info=setup_content.strip(' \t\n\r'), cli_entry_point=entry_point,project_name=name, entry_package=entry_package_name)
                 
