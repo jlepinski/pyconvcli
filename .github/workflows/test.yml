@@ -9,6 +9,7 @@ jobs:
           python-version: '3.9.1'
       - run: python3 setup.py install
       - run: python3 -m unittest -v test/test_pyconvcli.py
+      - run: pyconvcli -h
   run-unit-tests-windows:
     runs-on: windows-latest    
     steps:
@@ -18,3 +19,4 @@ jobs:
           python-version: '3.9.1'
       - run: python setup.py install
       - run: python -m unittest -v test/test_pyconvcli.py
+      - run: pyconvcli -h
