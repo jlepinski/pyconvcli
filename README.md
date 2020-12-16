@@ -9,27 +9,37 @@ run the install command
 
 #### step 2
 
-In your project that you want to make a cli be sure to add the main entry point command to the setup.py of your project. i.e.
-``` 
-entry_points={
-        'console_scripts': [
-            'mycli = mycli.cli:main'
-        ],
-    }
+run the command to create a new cli project in the directory you want to create it in.
+
+for example
+
+`pyconvcli new cli --project_name example --cli_call_word mycli`
+
+the usage is as follows
 ```
-in this case the entrypoint command is mycli and the entry point is the cli file inside the mycli directory of your project. As designed all files that contain cli commands should live in this directory. Please keep in mind that if you use your MANIFEST file to change the locations of your files this may effect your cli.
+usage: pyconvcli new cli [-h] --project_name PROJECT_NAME
+                         [--root_package_name ROOT_PACKAGE_NAME]
+                         [--cli_call_word CLI_CALL_WORD] [--version VERSION]
+                         [--author AUTHOR] [--author_email AUTHOR_EMAIL]
+                         [--description DESCRIPTION]
 
-#### step 3
-
-In the root directory of your project have a directory for your cli with a file that contains an entrypoint for your application as previously mentioned.That entrypoint creates the cli object for example if your root module is in a folder called pyconvclitest you would use the following to run the cli as your entrypoint.
-``` 
-from pyconvcli import PyConvCli
-import os
-
-def main():
-    cli = PyConvCli('pyconvclitest',os.path.dirname(os.path.realpath(__file__)))
-    cli.run()
+optional arguments:
+  -h, --help            show this help message and exit
+  --project_name PROJECT_NAME
+                        the name of your project
+  --root_package_name ROOT_PACKAGE_NAME
+                        the name of your cli package
+  --cli_call_word CLI_CALL_WORD
+                        the string that will be added to your path to call
+                        your cli
+  --version VERSION     the version of your project
+  --author AUTHOR       the author of your project
+  --author_email AUTHOR_EMAIL
+                        the email of the author of your project
+  --description DESCRIPTION
+                        the description of your project
 ```
+
 
 #### step 4
 in order to create a command you need to create a class in your project that either ends with _CLI in the name or _CLI_ROOT. if it ends with cli the command will be the file path from the root of your project followed by the function name. If it is _CLI_ROOT it will be the function name followed by the root command of your project
@@ -64,12 +74,15 @@ class Alternative_CLI_ROOT():
             count = count +1
             time.sleep((60/rythem))
 ```
+You can also optionally add a _cli_path attribut to the class with a value of the string array you want to declare the path as. This will have a higher priority and allow you to declare the path to your action set.
 
 ### Plans for the future. 
-1. I would like to get a small app that runs as a visualized version of the cli so you can run your cli by just filling out some forms or using the forms then copy a string that you can just paste in the terminal to run.
-2. I will be creating a cli with the cli tool that will automat setting up a cli project.
+
+1. I need to come up with a convention for configuring details about a subparser. I an thinking of maybe setting up a configuration file where you can add additional metadata for configuring your subparsers without going to multiple places.
+
+2. I would like to get a small app that runs as a visualized version of the cli so you can run your cli by just filling out some forms or using the forms then copy a string that you can just paste in the terminal to run.
+
 3. I would consider putting together an object written to a file representing the cli structure at build time of your project using a cmdclass in your setup.py. This would allow us to create the parsers at runtime without loading or inspecting any classes and would allow you to run your project without importing anything but your entrypoint. The benefits of this would be rather small unles you have a very large project.
-4. I need to come up with a convention for configuring details about a subparser. I an thinking of maybe setting up a configuration file where you can add additional metadata for configuring your subparsers without going to multiple places.
 
 
 ### Who do I talk to? ###
