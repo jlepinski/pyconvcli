@@ -6,7 +6,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setuptools.setup(name='pyconvcli',
-      version='0.0.3',
+      version='0.0.4',
       description='A convention based CLI framework for python',
       author='Joshua Lepinski',
       author_email='joshualepinski@gmail.com',
