@@ -40,8 +40,7 @@ optional arguments:
                         the description of your project
 ```
 
-
-#### step 4
+#### step 3
 in order to create a command you need to create a class in your project that either ends with _CLI in the name or _CLI_ROOT. if it ends with cli the command will be the file path from the root of your project followed by the function name. If it is _CLI_ROOT it will be the function name followed by the root command of your project
 
 This is an example of the code to add a root command
