@@ -49,19 +49,32 @@ class PyConvCli():
     def __init__(self,root_module_name,dir_path):
         self.dir_path=dir_path
         self.root_module_name = root_module_name
+        self.config={}
+        config_file_path=os.path.join(self.dir_path,'pyconvcli.json')
+        if os.path.isfile(config_file_path): 
+            with open(config_file_path) as f:
+                self.config = json.load(f)
 
     def run(self):
         args,parsers = self.parse_args()
         class_ref, function_name = self.find_class_and_function(args,parsers)
         self.run_cli_call(class_ref,function_name,args)
+
+    def get_config_value(self,path,key):
+        # keep in mind this will need to be done this way instead of using pydash because the . in pydash has a meaning to create a key path rather than just a key
+        if path not in self.config:
+            return None
+        else:
+            return get(self.config[path],key)
+        
         
     def parse_args(self):
-        parser = argparse.ArgumentParser(description='the default cli entry')
+        parser = argparse.ArgumentParser(description=self.get_config_value(self.root_module_name,'description'))
         # dir_path = os.path.dirname(os.path.realpath(__file__))
         first_root=None
         first_package=None
         visited_roots=[]
-        subparsers = parser.add_subparsers(help="sub commands")
+        subparsers = parser.add_subparsers(help=self.get_config_value(self.root_module_name,'sub_help'))
         parsers={self.root_module_name:{"parser":parser,"subparsers":subparsers}}
         for root, dirs, files in os.walk(self.dir_path, topdown = True):
             if not first_root:
@@ -146,8 +159,8 @@ class PyConvCli():
                         if not "callables" in parent_path_parser:
                             parent_path_parser['callables']={}
                         if not "subparsers" in parent_path_parser:
-                            parent_path_parser['subparsers']=parent_path_parser['parser'].add_subparsers(help="sub commands")
-                        parser=parent_path_parser['subparsers'].add_parser(function_name)
+                            parent_path_parser['subparsers']=parent_path_parser['parser'].add_subparsers(help=self.get_config_value(modul_name,'sub_help'))
+                        parser=parent_path_parser['subparsers'].add_parser(function_name, description = self.get_config_value(f'{modul_name}.{function_name}','description'))
                         if hasattr(function_ref, '_arg_groups'):
                             groups = map_values(group_by(function_ref._arg_groups, 'name'), lambda groupArray: self.add_group_to_parrser(parser,groupArray[-1]))
                         
@@ -183,7 +196,7 @@ class PyConvCli():
         if module_name==self.root_module_name:
             parser_object = parsers[self.root_module_name]
             if "subparsers" not in parser_object:
-                parser_object['subparsers']=parser_object['parser'].add_subparsers(help="sub commands")
+                parser_object['subparsers']=parser_object['parser'].add_subparsers(help=self.get_config_value(self.root_module_name,'sub_help'))
             return 
         
         for path_segment in module_slice_array:
@@ -193,8 +206,8 @@ class PyConvCli():
                     raise Exception(f'could not find root parser to {".".join(path_array)}')
                 parser_object = parsers['.'.join(path_array[:-1])]
                 if "subparsers" not in parser_object:
-                    parser_object['subparsers']=parser_object['parser'].add_subparsers(help="sub commands")
-                parsers['.'.join(path_array)] ={"parser": parser_object['subparsers'].add_parser(path_array[-1])}
+                    parser_object['subparsers']=parser_object['parser'].add_subparsers(help=self.get_config_value('.'.join(path_array[:-1]),'sub_help'))
+                parsers['.'.join(path_array)] ={"parser": parser_object['subparsers'].add_parser(path_array[-1],description=self.get_config_value(".".join(path_array),'description'))}
 
 
 

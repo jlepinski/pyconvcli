@@ -1,0 +1,9 @@
+{
+    "cli":{
+        "description": "a cli creation framework made for the purpose of removing boilerplate code so that you can spend more time writing your project than working with the parser tree",
+        "sub_help" :  "the pyconvcli tool set"
+    },
+    "cli.new":{
+        "description": "a command for the creation of various parts to your project"
+        }
+}
