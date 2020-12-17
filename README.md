@@ -1,6 +1,8 @@
 # pyconvcli
 A convention based CLI framework for python
 
+This framework builds on the argparse library making it easy to setup and build a cli by convention from code without having to string together the hierarchy yourself. You simpley create a cli project using the cli which is built using the framework itself, and create classes with functions. We utilize the type annotation to configure your cli attributes for you using the same params as the argparse.add_argument function with an expansion of the 'group' attribute to let you assign a parameter to a group. You can create groups using our decorator which adds metadata to the function so that we can assign the parameters to the correct group.
+
 ### How do I get set up? ###
 
 #### step 1
