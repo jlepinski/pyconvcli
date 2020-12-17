@@ -1,4 +1,4 @@
-from pyconvcli import ParserArgType
+from pyconvcli import ParserArgType, ParserArgGroupType,ArgGroupsDecorator
 import inspect
 from pydash import omit
 from os import path
@@ -6,10 +6,11 @@ import os
 import stringcase
 
 class New_CLI():
+    @ArgGroupsDecorator(ParserArgGroupType(name='required arguments',description="these arguments are required"))
     def cli(self,
-            project_name:ParserArgType(type=str, help="the name of your project", required=True),
+            project_name:ParserArgType(type=str, help="the name of your project", required=True, group='required arguments'),
             root_package_name:ParserArgType(type=str, default='cli', help="the name of your cli package"),
-            cli_call_word:ParserArgType(type=str,help="the string that will be added to your path to call your cli"),
+            cli_call_word:ParserArgType(type=str,help="the string that will be added to your path to call your cli",required=True, group='required arguments'),
             version:ParserArgType(type=str, default='0.0.1', help="the version of your project")=None,
             author:ParserArgType(type=str,help="the author of your project")=None,
             author_email:ParserArgType(type=str, help="the email of the author of your project")=None,
