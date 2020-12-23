@@ -5,6 +5,7 @@ import sys
 import argparse
 import json
 from pydash import sort_by, find, group_by,map_, map_values, get,omit
+from .app_deligate import EelDeligate
 
 
 
@@ -54,6 +55,7 @@ class PyConvCli():
         if os.path.isfile(config_file_path): 
             with open(config_file_path) as f:
                 self.config = json.load(f)
+        self.parsers=None
 
     def run(self):
         args,parsers = self.parse_args()
@@ -210,5 +212,8 @@ class PyConvCli():
                 parsers['.'.join(path_array)] ={"parser": parser_object['subparsers'].add_parser(path_array[-1],description=self.get_config_value(".".join(path_array),'description'))}
 
 
-
+    def visualize(self):
+        deligate = EelDeligate.instance()
+        deligate.cli=self 
+        deligate.start(False)
 
