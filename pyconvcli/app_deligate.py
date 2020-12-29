@@ -197,7 +197,8 @@ class TinkerDelegate(tk.Frame):
             form_widget_object['widget']=[form_widget_object['widget'],widget]
         else:
             form_widget_object['widget'].append(widget)
-        widget.pack(side=tk.RIGHT)
+        for widget in form_widget_object['widget']:
+            widget.pack(side=tk.LEFT)
         form_widget_object['button'].pack(side=tk.RIGHT)
 
 
