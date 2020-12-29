@@ -5,7 +5,7 @@ import sys
 import argparse
 import json
 from pydash import sort_by, find, group_by,map_, map_values, get,omit
-from .app_deligate import EelDeligate, TinkerDelegate
+from .app_deligate import  TinkerDelegate
 from .parse_classes import ParserArgType, ParserArgMutuallyExclusiveType,ParserArgGroupType
 import tkinter
 
