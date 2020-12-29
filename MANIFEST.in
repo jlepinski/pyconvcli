@@ -1,10 +1,2 @@
 include cli/resources/*.txt
 include cli/pyconvcli.json
-include pyconvcli/visualizer/index.html
-include pyconvcli/visualizer/main.js
-include pyconvcli/visualizer/package.json
-include pyconvcli/visualizer/package-lock.json
-include pyconvcli/visualizer/build/*
-include pyconvcli/visualizer/build/static/js/*
-include pyconvcli/visualizer/build/static/css/*
-include pyconvcli/visualizer/build/static/media/*

@@ -1,1 +1,2 @@
-from .pyconvcli import PyConvCli, ParserArgType, ParserArgMutuallyExclusiveType,ParserArgGroupType,ArgGroupsDecorator
+from .pyconvcli import PyConvCli
+from .parse_classes import ParserArgType, ParserArgMutuallyExclusiveType,ParserArgGroupType,ArgGroupsDecorator

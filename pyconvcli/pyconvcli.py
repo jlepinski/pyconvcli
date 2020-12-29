@@ -5,52 +5,17 @@ import sys
 import argparse
 import json
 from pydash import sort_by, find, group_by,map_, map_values, get,omit
-from .app_deligate import EelDeligate
+from .app_deligate import EelDeligate, TinkerDelegate
+from .parse_classes import ParserArgType, ParserArgMutuallyExclusiveType,ParserArgGroupType
+import tkinter
 
-
-
-class ParserArgType():
-    def __init__(self, *args, **kwargs):
-        """
-        this class will be used to pass allong values to the argparse add_argument function
-        """
-        #group is seperated out because it is not an original argument to the argparse add_argument function call
-        #seperating it out allows us to select a group for our argument to be placed in if it is indicated
-        group=get(kwargs,'group')
-        if group:
-            self.group=group
-        self.args=args
-        self.kwargs=omit(kwargs,'group')
-
-class ParserArgGroupType():
-    def __init__(self, name=None,description=None):
-        """
-        this class will be used to pass allong values to the argparse add_argument_group function
-        """
-        self.name=name
-        self.description=description
-
-class ParserArgMutuallyExclusiveType():
-    def __init__(self, name=None, description=None,required=False):
-
-        """
-        this class will be used to pass allong values to the argparse add_mutually_exclusive_group function
-        """
-        self.name=name
-        self.description=description
-        self.required=required
-
-def ArgGroupsDecorator(*args):
-    def wrapper(func):
-        func._arg_groups=args
-        return func
-    return wrapper
 
 class PyConvCli():
-    def __init__(self,root_module_name,dir_path):
+    def __init__(self,root_module_name,dir_path,entry_name="entry_command_goes_here"):
         self.dir_path=dir_path
         self.root_module_name = root_module_name
         self.config={}
+        self.entry_name=entry_name
         config_file_path=os.path.join(self.dir_path,'pyconvcli.json')
         if os.path.isfile(config_file_path): 
             with open(config_file_path) as f:
@@ -178,6 +143,8 @@ class PyConvCli():
                             if param.annotation.__class__==ParserArgType:
                       
                                 args = tuple([f'--{param.name}']) if len(param.annotation.args)==0 else param.annotation.args
+                                if len(param.annotation.args)>0 and 'dest' not in param.annotation.kwargs:
+                                    param.annotation.kwargs['dest'] = param.name
                                 if hasattr(param.annotation,'group'):
                                     group = get(groups,param.annotation.group)
                                     if group:
@@ -213,7 +180,11 @@ class PyConvCli():
 
 
     def visualize(self):
-        deligate = EelDeligate.instance()
-        deligate.cli=self 
-        deligate.start(False)
+        root = tkinter.Tk()
+        root.title("Pconvcli App")
+        deligate = TinkerDelegate(root,self)
+        deligate.cli=self
+        deligate.entry_word='pyconvlci'
+
+        deligate.mainloop()
 
