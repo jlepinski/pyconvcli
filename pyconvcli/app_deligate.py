@@ -183,9 +183,12 @@ class TinkerDelegate(tk.Frame):
         self.variables.append(new_variable)
         new_option_menu.pack(side=tk.LEFT)
 
-    def add_another_arg(self,form_widget_object):
+    def add_another_arg(self,form_widget_object,choices=None):
         variable = tk.StringVar()
-        widget = tk.Entry(form_widget_object['row'],textvariable=variable)
+        if choices:
+            widget = tk.OptionMenu(form_widget_object['row'], variable, *choices)
+        else:
+            widget = tk.Entry(form_widget_object['row'],textvariable=variable)
         if not isinstance(form_widget_object['variable'],list):
             form_widget_object['variable']=[form_widget_object['variable'],variable]
         else:
@@ -193,7 +196,7 @@ class TinkerDelegate(tk.Frame):
         if not isinstance(form_widget_object['widget'],list):
             form_widget_object['widget']=[form_widget_object['widget'],widget]
         else:
-            form_widget_object['widget'].append(variable)
+            form_widget_object['widget'].append(widget)
         widget.pack(side=tk.RIGHT)
         form_widget_object['button'].pack(side=tk.RIGHT)
 
@@ -206,11 +209,18 @@ class TinkerDelegate(tk.Frame):
                 #ToDo handle a button to add more arg entries as requested
                 row = tk.Frame(self.master)
                 variable = tk.StringVar()
-                add_button = tk.Button(row, text ="add argument", command = lambda : self.add_another_arg(self.form_widgets[key]))
+                choices_list_exists = "choices" in param.annotation.kwargs
+                if choices_list_exists:
+                    add_button_command = lambda : self.add_another_arg(self.form_widgets[key],param.annotation.kwargs['choices'])
+                    widget = tk.OptionMenu(row, variable, *param.annotation.kwargs['choices'])
+                else:
+                    add_button_command = lambda : self.add_another_arg(self.form_widgets[key])
+                    widget = tk.Entry(row,textvariable=variable)
+                add_button = tk.Button(row, text ="add argument", command =add_button_command)
 
                 self.form_widgets[key]={'variable':variable,
                                         'label':tk.Label(row,text=key),
-                                        'widget':tk.Entry(row,textvariable=variable),
+                                        'widget':widget,
                                         'button':add_button,
                                         'row':row}
                 row.pack()
@@ -280,13 +290,17 @@ class TinkerDelegate(tk.Frame):
                     value = self.form_widgets[item][widget]
                     if isinstance(value, list):
                         for form_widget in value:
-
+                            try:
                                 form_widget.destroy()
-
-                            # form_widget.pack_forget()
+                            except AttributeError as e:
+                                #likely destroy isn't an option so we'll got with pack_forget
+                                form_widget.pack_forget()
                     else:
-                        self.form_widgets[item][widget].destroy()
-                        # self.form_widgets[item][widget].pack_forget()
+                        try:
+                            self.form_widgets[item][widget].destroy()
+                        except AttributeError as e:
+                            #likely destroy isn't an option so we'll got with pack_forget
+                            self.form_widgets[item][widget].pack_forget()
         self.form_widgets={}
 
     def update_options(self, *args):
