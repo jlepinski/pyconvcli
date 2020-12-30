@@ -25,3 +25,14 @@ class CustomName_CLI():
 
     def customNameStarNCommand(self,arg:ParserArgType('--rgb','-r',type=str, nargs='*')):
         print(f'arg:{arg}')
+
+    def nargsChoiceCommand(self,arg:ParserArgType('--rgb','-r',type=str, nargs='*', choices=['2','1','4'])):
+        print(f'arg:{arg}')
+
+    def thereOrNotCommand(self,feature:ParserArgType(action='store_true'),notfeature:ParserArgType(action='store_false')):
+        print(f'feature:{feature},notfeature:{notfeature}')
+
+class Exploritory_CLI():
+    _cli_path=[]
+    def actionStoreConst(self, constarg:ParserArgType(action='store_const', const=42, default='default')):
+        print(f'if the constarg value is passed the const is set and the answer to the universe is {constarg}')

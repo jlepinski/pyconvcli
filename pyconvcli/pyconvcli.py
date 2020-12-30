@@ -5,7 +5,7 @@ import sys
 import argparse
 import json
 from pydash import sort_by, find, group_by,map_, map_values, get,omit
-from .app_deligate import  TinkerDelegate
+from .app import PyconvcliApp
 from .parse_classes import ParserArgType, ParserArgMutuallyExclusiveType,ParserArgGroupType
 import tkinter
 
@@ -90,7 +90,7 @@ class PyConvCli():
         parser_object = parsers[parser_key]
         if "callables" not in parser_object or function_name=='':
             parser_object['parser'].print_help()
-            sys.exit(1) 
+            sys.exit(1)
         return (parser_object["callables"][function_name]['class_ref'],function_name)
 
 
@@ -182,7 +182,7 @@ class PyConvCli():
     def visualize(self):
         root = tkinter.Tk()
         root.title("Pconvcli App")
-        deligate = TinkerDelegate(root,self)
+        deligate = PyconvcliApp(root, self)
         deligate.cli=self
         deligate.entry_word='pyconvlci'
 
