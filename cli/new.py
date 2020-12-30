@@ -21,7 +21,7 @@ class New_CLI():
         self.setup_file(entry_package_name=root_package_name,entry_point=cli_call_word,name=project_name,version=version,author=author,author_email=author_email,description=description)
         self.module(name=root_package_name)
         os.chdir(root_package_name)
-        self.entry_class(root_package_name)
+        self.entry_class(root_package_name,cli_call_word)
         self.module(name="hello")
         os.chdir("hello")
         self.cli_class(class_name="world")
@@ -30,7 +30,7 @@ class New_CLI():
 
     def cli_class(self,
                 class_name:ParserArgType(type=str, required=True),
-                cli_path:ParserArgType(type=str)=None):
+                cli_path:ParserArgType(type=str)=''):
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),"resources","cli_class_template.txt"), 'r') as f:
                 file_content=f.read().format(name=stringcase.capitalcase(class_name), cli_path=cli_path)
                 
@@ -38,9 +38,9 @@ class New_CLI():
                 f.write(file_content)
                 f.close()
 
-    def entry_class(self,root_package_name):
+    def entry_class(self,root_package_name,cli_call_word):
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),"resources","entry_class_template.txt"), 'r') as f:
-            file_content=f.read().format(entry_module_name=stringcase.trimcase(root_package_name))
+            file_content=f.read().format(entry_module_name=stringcase.trimcase(root_package_name),cli_call_word=cli_call_word)
             
             f = open(f'cli.py', "w")
             f.write(file_content)

@@ -9,15 +9,7 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-class CliAppInstall(build_py):
-     def run(self):
-        print("RUNNING NPM INSTALL")
-        print(self)
-        original_cwd = os.getcwd()
-        os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__)),'pyconvcli','visualizer'))
-        subprocess.Popen('npm install && npm run build ', shell=True).communicate() 
-        os.chdir(original_cwd)
-        build_py.run(self)
+
 
 setuptools.setup(name='pyconvcli',
       version='0.0.4',
@@ -35,18 +27,12 @@ setuptools.setup(name='pyconvcli',
       long_description_content_type='text/markdown',
       install_requires=[
           'pydash==4.9.0',
-          'stringcase==1.2.0',
-          'eel'
-          
+          'stringcase==1.2.0'
       ],
       entry_points={
         'console_scripts': [
             'pyconvcli = cli.cli:main',
             'pyconvcli-app = cli.cli:visualize'
         ],
-        
-
-    },cmdclass={
-        'cli_app_install': CliAppInstall
     }
      )

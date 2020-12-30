@@ -82,6 +82,27 @@ class PyconvcliApp(tk.Frame):
 
         self.pack()
 
+    def quote_if_space_or_special_char(self,value):
+        characters_that_need_quotes=" !|<>&~`#$*()\[]{};\"/?"
+        if len(value)>1 and value[0]=="'" and value[-1]=="'":
+            # it's already escaped they may even be trying to put in the empty string
+            if "'" in value[1:-1]:
+                #escapes any ' chars they may have missed in the middle so they don't have to escape them for the fact it is in quotes
+                value="'"+value[1:-1].replace("'","'\"'\"'")+"'"
+            return value
+        else:
+            value=value.replace("'","'\"'\"'")
+        if type(value) == str and any(char in value for char in characters_that_need_quotes):
+            #escape any existing quotes because they aren't on the ends
+
+            return "'"+value+"'"
+        return value
+
+    def escape_non_param_names(self,value):
+        if type(value)==str and not value.startswith('--'):
+            return self.quote_if_space_or_special_char(value)
+        return value
+
     def get_path_from_widgets(self):
         command_list = []
         for item in self.form_widgets:
@@ -131,7 +152,7 @@ class PyconvcliApp(tk.Frame):
         path_values = map_(self.variables,lambda variable:variable.get())[1:]
         command_list = self.get_path_from_widgets()
         for command in command_list:
-            path_values.append(command)
+            path_values.append(self.escape_non_param_names(command))
         with_entry = ' '.join([self.cli.entry_name,*path_values])
         sys.argv=[self.cli.root_module_name,*path_values]
 
