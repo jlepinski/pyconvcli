@@ -9,6 +9,8 @@ from .app import PyconvcliApp
 from .parse_classes import ParserArgType, ParserArgMutuallyExclusiveType,ParserArgGroupType
 import tkinter
 
+import stringcase
+
 
 class PyConvCli():
     def __init__(self,root_module_name,dir_path,entry_name="entry_command_goes_here"):
@@ -179,12 +181,14 @@ class PyConvCli():
                 parsers['.'.join(path_array)] ={"parser": parser_object['subparsers'].add_parser(path_array[-1],description=self.get_config_value(".".join(path_array),'description'))}
 
 
-    def visualize(self):
+    def visualize(self, title=None):
         root = tkinter.Tk()
-        root.title("Pconvcli App")
-        deligate = PyconvcliApp(root, self)
-        deligate.cli=self
-        deligate.entry_word='pyconvlci'
+        if title:
+            root.title(title)
+        else:
+            root.title(f'{stringcase.titlecase(self.entry_name)} App')
+        app = PyconvcliApp(root, self)
+        app.cli=self
 
-        deligate.mainloop()
+        app.mainloop()
 

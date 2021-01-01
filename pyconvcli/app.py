@@ -52,7 +52,6 @@ def build_sub_options(parsers,key):
 
 class PyconvcliApp(tk.Frame):
     cli=None
-    entry_word=None
     variables=[]
     def __init__(self, master,cli):
         self.cli=cli
@@ -61,10 +60,6 @@ class PyconvcliApp(tk.Frame):
         self.dropdown_map={}
         self.form_widgets={}
         self.usage=None
-
-
-        self.dict = {'Asia': ['Japan', 'China', 'Malaysia'],
-                     'Europe': ['Germany', 'France', 'Switzerland']}
 
         text = tk.Label(master, text="Select a path from the dropdowns. When you hit a callable command it will give you more options")#tk.Text(master, height=1, font="TkDefaultFont 10")
         self.variable_a = tk.StringVar(self)
