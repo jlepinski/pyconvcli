@@ -79,9 +79,7 @@ You can also optionally add a _cli_path attribut to the class with a value of th
 
 ### Plans for the future. 
 
-1. I would like to get a small app that runs as a visualized version of the cli so you can run your cli by just filling out some forms or using the forms then copy a string that you can just paste in the terminal to run.
-
-2. I would consider putting together an object written to a file representing the cli structure at build time of your project using a cmdclass in your setup.py. This would allow us to create the parsers at runtime without loading or inspecting any classes and would allow you to run your project without importing anything but your entrypoint. The benefits of this would be rather small unles you have a very large project.
+I would consider putting together an object written to a file representing the cli structure at build time of your project using a cmdclass in your setup.py. This would allow us to create the parsers at runtime without loading or inspecting any classes and would allow you to run your project without importing anything but your entrypoint. The benefits of this would be rather small unles you have a very large project.
 
 
 ### Who do I talk to? ###
