@@ -1,4 +1,5 @@
 from pyconvcli import ParserArgGroupType, ParserArgMutuallyExclusiveType, ParserArgType, ArgGroupsDecorator
+import argparse
 
 class Please_CLI():
     _cli_path=['here','custom','route']
@@ -36,3 +37,13 @@ class Exploritory_CLI():
     _cli_path=[]
     def actionStoreConst(self, constarg:ParserArgType(action='store_const', const=42, default='default')):
         print(f'if the constarg value is passed the const is set and the answer to the universe is {constarg}')
+
+    def fileOpenWidget(self, file:ParserArgType(type=argparse.FileType('r', encoding='UTF-8'))):
+        print(f'file {file}')
+
+    def filesNStarOpenWidget(self, file:ParserArgType(type=argparse.FileType('r', encoding='UTF-8'), nargs="*")):
+        print(f'file {file}')
+
+
+    def filesN2OpenWidget(self, file:ParserArgType(type=argparse.FileType('r', encoding='UTF-8'), nargs=2)):
+        print(f'file {file}')

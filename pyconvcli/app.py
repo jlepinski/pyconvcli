@@ -2,6 +2,7 @@ import subprocess
 import sys
 import json
 from pydash import map_, find, find_index,get
+import tkinter.filedialog
 import tkinter as tk
 from tkinter import messagebox
 import inspect
@@ -9,6 +10,7 @@ from .parse_classes import ParserArgType
 from contextlib import redirect_stderr, redirect_stdout
 import io
 import shlex
+import argparse
 
 
 def build_options(cli):
@@ -126,10 +128,11 @@ class PyconvcliApp(tk.Frame):
         self.master.clipboard_clear()
         path_values = map_(self.variables,lambda variable:variable.get())[1:]
         command_list = self.get_path_from_widgets()
+        sys.argv=[self.cli.root_module_name,*path_values, *command_list]
         for command in command_list:
             path_values.append(shlex.quote(command))
         with_entry = ' '.join([self.cli.entry_name,*path_values])
-        sys.argv=[self.cli.root_module_name,*path_values]
+
 
         std_err = io.StringIO()
         with redirect_stderr(std_err):
@@ -171,9 +174,12 @@ class PyconvcliApp(tk.Frame):
         self.variables.append(new_variable)
         new_option_menu.pack(side=tk.LEFT)
 
-    def add_another_arg(self,form_widget_object,choices=None):
+    def add_another_arg(self,form_widget_object,choices=None,file_selector=None):
         variable = tk.StringVar()
-        if choices:
+        if file_selector:
+            widget = tk.Button(form_widget_object['row'])
+            widget.config(text="Browse Files", command=lambda : self.browse_files(variable,widget))
+        elif choices:
             widget = tk.OptionMenu(form_widget_object['row'], variable, *choices)
         else:
             widget = tk.Entry(form_widget_object['row'],textvariable=variable)
@@ -189,6 +195,11 @@ class PyconvcliApp(tk.Frame):
             widget.pack(side=tk.LEFT)
         form_widget_object['button'].pack(side=tk.RIGHT)
 
+    def browse_files(self, variable, button):
+        filename = tkinter.filedialog.askopenfilename(initialdir = "/", title = "Select a File",)
+        if filename:
+            variable.set(filename)
+            button.config(text="Change File")
 
 
     def add_custom_annotated_field_to_form(self,key,param):
@@ -204,12 +215,20 @@ class PyconvcliApp(tk.Frame):
             row.pack()
             self.form_widgets[key]['widget'].pack()
             return
+
+
+
         if "nargs" in param.annotation.kwargs:
             if param.annotation.kwargs['nargs']=="*":
                 row = tk.Frame(self.master)
                 variable = tk.StringVar()
                 choices_list_exists = "choices" in param.annotation.kwargs
-                if choices_list_exists:
+                is_file_list = "type" in param.annotation.kwargs and param.annotation.kwargs['type'].__class__==argparse.FileType
+                if is_file_list:
+                    add_button_command = lambda : self.add_another_arg(self.form_widgets[key],file_selector=True)
+                    widget = tk.Button(row)
+                    widget.config(text="Browse Files", command=lambda : self.browse_files(variable,widget))
+                elif choices_list_exists:
                     add_button_command = lambda : self.add_another_arg(self.form_widgets[key],param.annotation.kwargs['choices'])
                     widget = tk.OptionMenu(row, variable, *param.annotation.kwargs['choices'])
                 else:
@@ -234,7 +253,16 @@ class PyconvcliApp(tk.Frame):
                 for i in range(param.annotation.kwargs['nargs']):
                     variable=tk.StringVar()
                     variables.append(variable)
-                    widgets.append(tk.Entry(row,textvariable=variable))
+                    choices_list_exists = "choices" in param.annotation.kwargs
+                    is_file_list = "type" in param.annotation.kwargs and param.annotation.kwargs['type'].__class__==argparse.FileType
+                    if is_file_list:
+                        #Note the i=i int he parameter section is due to a context bug where the last button in the loop hijacks the others context if not provided in the params
+                        # see https://stackoverflow.com/questions/10865116/tkinter-creating-buttons-in-for-loop-passing-command-arguments
+                        widgets.append(tk.Button(row, name=f'file_open{i}',text="Browse Files", command=lambda i=i: self.browse_files(variables[i],widgets[i])))
+                    elif choices_list_exists:
+                        widgets.append(tk.OptionMenu(row, variable, *param.annotation.kwargs['choices']))
+                    else:
+                        widgets.append(tk.Entry(row,textvariable=variable))
 
                 self.form_widgets[key]={'variable':variables,
                                         'label':tk.Label(row,text=key),
@@ -242,9 +270,22 @@ class PyconvcliApp(tk.Frame):
                                         'row':row}
                 row.pack()
                 self.form_widgets[key]['label'].pack(side=tk.LEFT)
+
                 for widget in self.form_widgets[key]['widget']:
                     widget.pack(side=tk.LEFT)
                 return
+        if "type" in param.annotation.kwargs and param.annotation.kwargs['type'].__class__==argparse.FileType:
+            row = tk.Frame(self.master)
+            variable=tk.StringVar()
+
+            button_explore = tk.Button(row)
+            button_explore.config(text="Browse Files", command=lambda : self.browse_files(variable,button_explore))
+            self.form_widgets[key]={'variable':variable,
+                                    'widget':button_explore,
+                                    'row':row}
+            button_explore.pack()
+            row.pack()
+
         if "choices" in param.annotation.kwargs:
             row = tk.Frame(self.master)
             variable = tk.StringVar()
