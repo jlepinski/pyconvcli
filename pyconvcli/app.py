@@ -167,11 +167,6 @@ class PyconvcliApp(tk.Frame):
             del self.dropdown_map[str(variable)]
             self.variables.remove(variable)
 
-    def printarsandkwargs(self,*args,**kwargs):
-        print(args,kwargs)
-        for variable in self.variables:
-            if str(variable)==args[0]:
-                print(variable.get())
 
     def add_dropdown_option(self, selected_object):
         new_variable = tk.StringVar(self)
@@ -290,7 +285,7 @@ class PyconvcliApp(tk.Frame):
             row.pack()
             self.form_widgets[key]['label'].pack(side=tk.LEFT)
             self.form_widgets[key]['widget'].pack(side=tk.RIGHT)
-        print(key,param)
+
 
     def clear_form_widgets(self):
         for item in self.form_widgets:
@@ -321,13 +316,12 @@ class PyconvcliApp(tk.Frame):
         if len(self.form_widgets)>0:
             self.clear_form_widgets()
         self.master.geometry('')
-        print(args)
+
         changed_variable=None
         for variable in self.variables:
             if str(variable)==args[0]:
                 changed_variable=variable
                 break
-                print(variable.get())
         if changed_variable == self.variables[-1]:
             selected_object=self.get_selected_object()
             if selected_object and "choices" in selected_object:
@@ -336,7 +330,6 @@ class PyconvcliApp(tk.Frame):
                 self.add_dropdown_option(selected_object)
             else:
                 if 'is_callable' in selected_object and selected_object['is_callable']:
-                    print(self.dropdown_map[str(changed_variable)].config().keys())
                     self.dropdown_map[str(changed_variable)].config(font='TkDefaultFont 20')
                     key = '.'.join(map_(self.variables,lambda variable:variable.get())[:-1])
                     if key in self.cli.parsers:
@@ -357,13 +350,12 @@ class PyconvcliApp(tk.Frame):
 
         else:
             context_to_remove = self.variables[find_index(self.variables,lambda variable:variable==changed_variable)+1:]
-            print(context_to_remove)
+
             self.remove_variables(context_to_remove)
             selected_object=self.get_selected_object()
             if selected_object and "choices" in selected_object:
                 self.add_dropdown_option(selected_object)
             if 'is_callable' in selected_object and selected_object['is_callable']:
-                print(self.dropdown_map[str(changed_variable)].config().keys())
                 self.dropdown_map[str(changed_variable)].config(font='TkDefaultFont 20')
                 key = '.'.join(map_(self.variables,lambda variable:variable.get())[:-1])
                 if key in self.cli.parsers:
