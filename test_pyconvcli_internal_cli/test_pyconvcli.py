@@ -13,7 +13,7 @@ class TestPyConvCli(unittest.TestCase):
 
         cli = PyConvCli('test_pyconvcli_internal_cli', os.path.dirname(os.path.realpath(__file__)),'pyconvcli-test')
         args, parsers = cli.parse_args()
-        self.assertEqual(len(parsers['test.here.custom.route']['callables']), 2)
+        self.assertEqual(len(parsers['test_pyconvcli_internal_cli.here.custom.route']['callables']), 2)
 
     def test_groups_feature(self):
         sys.argv = ['test_pyconvcli_internal_cli', "here", 'custom', 'route']
