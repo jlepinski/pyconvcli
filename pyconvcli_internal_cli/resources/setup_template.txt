@@ -8,7 +8,8 @@ setuptools.setup(
         ],
         entry_points={{
         'console_scripts': [
-            '{cli_entry_point} = {entry_package}.cli:main'
+            '{cli_entry_point} = {entry_package}.cli:main',
+            '{cli_entry_point}-app = {entry_package}.cli:visualize'
         ],
     }}
 )

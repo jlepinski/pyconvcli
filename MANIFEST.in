@@ -1,3 +1,2 @@
-include cli/resources/*.txt
-include cli/pyconvcli.json
-
+include pyconvcli_internal_cli/resources/*.txt
+include pyconvcli_internal_cli/pyconvcli.json
