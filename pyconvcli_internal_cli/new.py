@@ -9,13 +9,15 @@ class New_CLI():
     @ArgGroupsDecorator(ParserArgGroupType(name='required arguments',description="these arguments are required"))
     def cli(self,
             project_name:ParserArgType(type=str, help="the name of your project", required=True, group='required arguments'),
-            root_package_name:ParserArgType(type=str, default='cli', help="the name of your cli package"),
+            root_package_name:ParserArgType(type=str, required=True, group='required arguments', help="the name of your cli package"),
             cli_call_word:ParserArgType(type=str,help="the string that will be added to your path to call your cli",required=True, group='required arguments'),
             version:ParserArgType(type=str, default='0.0.1', help="the version of your project")=None,
             author:ParserArgType(type=str,help="the author of your project")=None,
             author_email:ParserArgType(type=str, help="the email of the author of your project")=None,
             description:ParserArgType(type=str, help="the description of your project")=None,
             ):
+
+        original_cwd = os.getcwd()
         self.module(name=project_name)
         os.chdir(project_name)
         self.setup_file(entry_package_name=root_package_name,entry_point=cli_call_word,name=project_name,version=version,author=author,author_email=author_email,description=description)
@@ -25,6 +27,7 @@ class New_CLI():
         self.module(name="hello")
         os.chdir("hello")
         self.cli_class(class_name="world")
+        os.chdir(original_cwd)
         print(f'created cli project {project_name}')
         
 

@@ -31,8 +31,10 @@ setuptools.setup(name='pyconvcli',
       ],
       entry_points={
         'console_scripts': [
-            'pyconvcli = cli.cli:main',
-            'pyconvcli-app = cli.cli:visualize'
+            'pyconvcli = pyconvcli_internal_cli.cli:main',
+            'pyconvcli-app = pyconvcli_internal_cli.cli:visualize',
+            'pyconvcli-test = test_pyconvcli_internal_cli.cli:main',
+            'pyconvcli-test-app = test_pyconvcli_internal_cli.cli:visualize'
         ],
     }
      )

@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import json
 from pydash import map_, find, find_index,get
@@ -7,6 +8,7 @@ import inspect
 from .parse_classes import ParserArgType
 from contextlib import redirect_stderr, redirect_stdout
 import io
+import shlex
 
 
 def build_options(cli):
@@ -63,8 +65,8 @@ class PyconvcliApp(tk.Frame):
 
         self.dict = {'Asia': ['Japan', 'China', 'Malaysia'],
                      'Europe': ['Germany', 'France', 'Switzerland']}
-        text = tk.Text(master, height=1, font="TkDefaultFont 10")
-        text.insert(tk.INSERT, "Select a path from the dropdowns. When you hit a callable command it will give you more options")
+
+        text = tk.Label(master, text="Select a path from the dropdowns. When you hit a callable command it will give you more options")#tk.Text(master, height=1, font="TkDefaultFont 10")
         self.variable_a = tk.StringVar(self)
         self.variable_b = tk.StringVar(self)
         self.variable_a.set(self.options['name'])
@@ -75,33 +77,14 @@ class PyconvcliApp(tk.Frame):
         self.run_command_button = tk.Button(master, text ="Run Command", command = self.run_function)
         self.copy_command_button = tk.Button(master, text ="Copy Command to Clipboard", command = self.copy_command)
 
-        text.config(state=tk.DISABLED)
+
         text.pack(side=tk.TOP)
 
         self.first_command.pack(side=tk.LEFT)
 
         self.pack()
 
-    def quote_if_space_or_special_char(self,value):
-        characters_that_need_quotes=" !|<>&~`#$*()\[]{};\"/?"
-        if len(value)>1 and value[0]=="'" and value[-1]=="'":
-            # it's already escaped they may even be trying to put in the empty string
-            if "'" in value[1:-1]:
-                #escapes any ' chars they may have missed in the middle so they don't have to escape them for the fact it is in quotes
-                value="'"+value[1:-1].replace("'","'\"'\"'")+"'"
-            return value
-        else:
-            value=value.replace("'","'\"'\"'")
-        if type(value) == str and any(char in value for char in characters_that_need_quotes):
-            #escape any existing quotes because they aren't on the ends
 
-            return "'"+value+"'"
-        return value
-
-    def escape_non_param_names(self,value):
-        if type(value)==str and not value.startswith('--'):
-            return self.quote_if_space_or_special_char(value)
-        return value
 
     def get_path_from_widgets(self):
         command_list = []
@@ -134,25 +117,22 @@ class PyconvcliApp(tk.Frame):
         command_list = self.get_path_from_widgets()
         for command in command_list:
             sys.argv.append(command)
-        # with StdoutFake() as faked_stdout:
-        std_err = io.StringIO()
-        std_out = io.StringIO()
-        with redirect_stderr(std_err):
-            with redirect_stdout(std_out):
-                try:
-                    self.cli.run()
-                    messagebox.showinfo("Ran without errors", std_out.getvalue())
-                except Exception as e:
-                    messagebox.showerror("Errors", e)
-                except SystemExit as e:
-                    messagebox.showerror("Errors", std_err.getvalue())
+        args=[self.cli.entry_name ,*sys.argv[1:]]
+        output=subprocess.run(args, capture_output=True)
+        encoding='utf-8'
+        if output.stderr:
+            messagebox.showerror("Errors", '\n'.join(['Error!','Output:',output.stderr.decode(encoding)]))
+
+        else:
+            messagebox.showinfo("Success", f'Success!\n{output.stdout.decode(encoding)}')
+
 
     def copy_command(self):
         self.master.clipboard_clear()
         path_values = map_(self.variables,lambda variable:variable.get())[1:]
         command_list = self.get_path_from_widgets()
         for command in command_list:
-            path_values.append(self.escape_non_param_names(command))
+            path_values.append(shlex.quote(command))
         with_entry = ' '.join([self.cli.entry_name,*path_values])
         sys.argv=[self.cli.root_module_name,*path_values]
 
@@ -273,7 +253,7 @@ class PyconvcliApp(tk.Frame):
                 row.pack()
                 self.form_widgets[key]['label'].pack(side=tk.LEFT)
                 for widget in self.form_widgets[key]['widget']:
-                    widget.pack(side=tk.RIGHT)
+                    widget.pack(side=tk.LEFT)
                 return
         if "choices" in param.annotation.kwargs:
             row = tk.Frame(self.master)
@@ -400,5 +380,4 @@ class PyconvcliApp(tk.Frame):
                         callable_item['parser'].print_help()
                     self.usage=tk.Label(self.master, text=std_out.getvalue())
                     self.usage.pack()
-
 
