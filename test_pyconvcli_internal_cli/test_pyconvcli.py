@@ -35,9 +35,9 @@ class TestPyConvCli(unittest.TestCase):
             cli.run()
         self.assertEqual(std_out.getvalue().strip(),"feature:False,notfeature:True")
 
-    def test_app(self):
-        sys.argv = ['test_pyconvcli_internal_cli', "here", 'custom', 'route']
-        cli = PyConvCli('test_pyconvcli_internal_cli', os.path.dirname(os.path.realpath(__file__)),'pyconvcli-test')
-        args, parsers = cli.parse_args()
-        cli.parsers = parsers
-        cli.visualize()
+    # def test_app(self):
+    #     sys.argv = ['test_pyconvcli_internal_cli', "here", 'custom', 'route']
+    #     cli = PyConvCli('test_pyconvcli_internal_cli', os.path.dirname(os.path.realpath(__file__)),'pyconvcli-test')
+    #     args, parsers = cli.parse_args()
+    #     cli.parsers = parsers
+    #     cli.visualize()
