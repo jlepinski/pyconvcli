@@ -1,5 +1,6 @@
-from pyconvcli import ParserArgGroupType, ParserArgMutuallyExclusiveType, ParserArgType, ArgGroupsDecorator
+from pyconvcli import ParserArgGroupType, ParserArgMutuallyExclusiveType, ParserArgType, ArgGroupsDecorator, ActionArguement
 import argparse
+import pkg_resources
 
 class Please_CLI():
     _cli_path=['here','custom','route']
@@ -47,3 +48,32 @@ class Exploritory_CLI():
 
     def filesN2OpenWidget(self, file:ParserArgType(type=argparse.FileType('r', encoding='UTF-8'), nargs=2)):
         print(f'file {file}')
+
+class repeated_CLI():
+    _cli_path=['here']
+    def testing(self, ascii:ParserArgType(type=ascii)):
+        print(f'ascii: {ascii}')
+
+class repeated_at_root_level_CLI():
+    _cli_path=[]
+    def here(self, ascii:ParserArgType(type=ascii)):
+        print(f'ascii: {ascii}')
+
+    def there(self):
+        print('no params but I was called')
+
+    @ActionArguement('testing','args',color='green')
+    def version(self,a,b,color=None):
+        print(pkg_resources.get_distribution("pyconvcli").version)
+
+    @ActionArguement('testing','args',color='green' )
+    def other(self,a,b,color=None):
+        print(a,b,color)
+
+    @ActionArguement(action_param_nargs=2)
+    def nargs2test(self, nargs2test=None):
+        print(nargs2test)
+
+    @ActionArguement(action_param_nargs='*')
+    def nargsstartest(self, nargsstartest=None):
+        print(nargsstartest)
