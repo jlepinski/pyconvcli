@@ -4,7 +4,7 @@ import importlib
 import sys
 import argparse
 import json
-from pydash import sort_by, find, group_by,map_, map_values, get,omit
+from pydash import sort_by, find, group_by,map_, map_values, get,omit, pick
 from .app import PyconvcliApp
 from .parse_classes import ParserArgType, ParserArgMutuallyExclusiveType,ParserArgGroupType
 import tkinter
@@ -27,7 +27,8 @@ class PyConvCli():
     def run(self):
         args,parsers = self.parse_args()
         class_ref, function_name = self.find_class_and_function(args,parsers)
-        self.run_cli_call(class_ref,function_name,args)
+        if not function_name.startswith('--'):
+            self.run_cli_call(class_ref,function_name,args)
 
     def get_config_value(self,path,key):
         # keep in mind this will need to be done this way instead of using pydash because the . in pydash has a meaning to create a key path rather than just a key
@@ -78,7 +79,9 @@ class PyConvCli():
         
     def run_cli_call(self,class_ref,function_name,args):
         fun = getattr(class_ref(),function_name)
-        fun(**vars(args))
+        # removes key work arg if it's not in the method signature
+        params = pick(vars(args),list(inspect.signature(fun).parameters.keys()))
+        fun(**params)
 
     def find_class_and_function(self,args,parsers):
         call = sys.argv
@@ -88,11 +91,18 @@ class PyConvCli():
         call_path = '.'.join(call)
         parser_key = find(list_of_parsers,
             lambda  path: call_path.startswith(path))
+        parser_path_list = parser_key.split('.')
+        if len(parser_path_list)>1 and\
+            'callables' in parsers['.'.join(parser_path_list[0:-1])] and parser_path_list[-1] in parsers['.'.join(parser_path_list[0:-1])]['callables'] and\
+                (len(parser_path_list)==len(call) or call_path[len(parser_key)+1:].startswith('--')):
+            parser_key='.'.join(parser_path_list[0:-1])
         function_name = call_path[len(parser_key)+1:].split('.')[0]
         parser_object = parsers[parser_key]
         if "callables" not in parser_object or function_name=='':
             parser_object['parser'].print_help()
             sys.exit(1)
+        if function_name.startswith('--'):
+            return(parser_object,function_name)
         return (parser_object["callables"][function_name]['class_ref'],function_name)
 
 
@@ -129,37 +139,49 @@ class PyConvCli():
                             parent_path_parser['callables']={}
                         if not "subparsers" in parent_path_parser:
                             parent_path_parser['subparsers']=parent_path_parser['parser'].add_subparsers(help=self.get_config_value(modul_name,'sub_help'))
-                        parser=parent_path_parser['subparsers'].add_parser(function_name, description = self.get_config_value(f'{modul_name}.{function_name}','description'))
+                        if hasattr(function_ref, '_action_param_action'):
+                            if not 'action_nargs' in parent_path_parser:
+                                parent_path_parser['action_nargs']={}
+
+                            parent_path_parser['action_nargs'][function_ref.__name__]=function_ref._action_param_nargs
+                            parent_path_parser['parser'].add_argument(f'--{function_name}',action=function_ref._action_param_action(*function_ref._action_param_args,**function_ref._action_param_kwargs), nargs=function_ref._action_param_nargs)
+                            continue
+                        if "subparsers" in parent_path_parser and hasattr(parent_path_parser['subparsers'],'choices') and function_name in parent_path_parser['subparsers'].choices:
+                            parser = parent_path_parser['subparsers'].choices[function_name]
+                        else:
+                            parser=parent_path_parser['subparsers'].add_parser(function_name, description = self.get_config_value(f'{modul_name}.{function_name}','description'))
                         if hasattr(function_ref, '_arg_groups'):
                             groups = map_values(group_by(function_ref._arg_groups, 'name'), lambda groupArray: self.add_group_to_parrser(parser,groupArray[-1]))
-                        
+                        if function_name in parent_path_parser['callables']:
+                            sys.stderr.write(f'{function_name} in {parent_path_parser["callables"]["class_ref"].__name__} is being overwritten by {function_name} in {class_ref.__name__}')
+
                         parent_path_parser['callables'][function_name] ={
                             "parser": parser,
                             "class_ref":class_ref,
                             "function_name":function_name,
                             "groups":groups}
-                            
+
                         for param in inspect.signature(function_ref).parameters.values():
-                      
+
                             parser = parent_path_parser['callables'][function_name]['parser']
                             if param.annotation.__class__==ParserArgType:
-                      
+
                                 args = tuple([f'--{param.name}']) if len(param.annotation.args)==0 else param.annotation.args
                                 if len(param.annotation.args)>0 and 'dest' not in param.annotation.kwargs:
                                     param.annotation.kwargs['dest'] = param.name
                                 if hasattr(param.annotation,'group'):
                                     group = get(groups,param.annotation.group)
                                     if group:
-                                        group.add_argument(*args,**param.annotation.kwargs) 
+                                        group.add_argument(*args,**param.annotation.kwargs)
                                     else:
                                         raise Exception(f'it appears that the group "{param.annotation.group}" is referenced by an arguement but not found when building the parser existing groups are {json.dumps(list(groups.keys()))}')
                                 else:
-                                    parser.add_argument(*args,**param.annotation.kwargs) 
+                                    parser.add_argument(*args,**param.annotation.kwargs)
                             if param.annotation == int:
                                 parser.add_argument(f'--{param.name}',type=param.annotation)
                             if param.annotation == str:
                                 parser.add_argument(f'--{param.name}',type=param.annotation)
-                                
+
                             
     def create_subparser(self,module_name,module,parsers):
         path_array=[]

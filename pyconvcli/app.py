@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import json
-from pydash import map_, find, find_index,get
+from pydash import map_, find, find_index,get, find_last
 import tkinter.filedialog
 import tkinter as tk
 from tkinter import messagebox
@@ -19,36 +19,77 @@ def build_options(cli):
     # cli = delegate.cli
     start_key=find(cli.parsers.keys(),lambda key: key.find('.')==-1)
     # delegate.start_key=start_key
-    json_version=build_sub_options(cli.parsers,start_key)
-    string_version = json.dumps(json_version)
+    json_version=build_sub_options(cli.parsers,start_key,cli)
+    # string_version = json.dumps(json_version)
     return json_version
 
-def build_sub_options(parsers,key):
+def find_longest_string_in_list(the_list):
+    result=''
+    for string_variable in the_list:
+        if len(string_variable)>len(result):
+            result=string_variable
+    return result
+
+def build_actions(parser,key,cli):
+    actions=[]
+    for action in parser['parser']._actions:
+        if action.__class__.__name__=='PyconvCliCustomAction' or action.__class__.__name__=='_HelpAction':
+            is_callable_parser=True
+            action_descriptor = find_longest_string_in_list(action.option_strings)
+            name = action_descriptor.replace('-','')
+            actions.append(
+                {
+                    "name":name,
+                    "key":key,
+                    "call_key":key.replace(cli.root_module_name ,cli.entry_name,1),
+                    "action_option":action_descriptor,
+                    "action_nargs":parser['action_nargs'][name] if 'action_nargs' in parser and name in parser['action_nargs'] else 0
+                }
+            )
+    return actions
+
+def build_sub_options(parsers,key,cli):
     parser_object=parsers[key]
     choices=[]
+    actions=[]
     if 'subparsers' in parser_object and hasattr(parser_object['subparsers'],'choices'):
         sub_keys=list(parser_object['subparsers'].choices.keys())
         for sub_key in sub_keys:
             child_key = '.'.join([key,sub_key])
             if child_key in parsers:
-                sub_result = build_sub_options(parsers,child_key)
+                sub_result = build_sub_options(parsers,child_key,cli)
                 choices.append(sub_result)
     if 'callables' in parser_object:
         callables=parser_object['callables']
         for callable_key in callables:
-            choices.append(
-                {
-                    "name":callable_key,
-                    "is_callable":True,
-                    "key":key,
-                    "function_name":callables[callable_key]['function_name']
-                }
-            )
+            already_added_choice = find(choices, lambda choice:choice['name']==callable_key)
+            if already_added_choice:
+                already_added_choice['function_name']=callables[callable_key]['function_name']
+                already_added_choice["callable_data"]=callables[callable_key]
+            else:
+                actions=build_actions(callables[callable_key],f'{key}.{callable_key}',cli)
+                choices.append(
+                    {
+                        "name":callable_key,
+                        "is_callable":True,
+                        "key":key,
+                        "call_key":key.replace(cli.root_module_name ,cli.entry_name,1),
+                        "function_name":callables[callable_key]['function_name'],
+                        "callable_data":callables[callable_key],
+                        "actions":actions
+                    }
+                )
+    is_callable_parser=False
+    if parser_object['parser']._actions:
+        actions=build_actions(parser_object,key,cli)
+        is_callable_parser=len(actions)>0
     return {
         "name":key.split('.')[-1],
-        "is_callable":False,
+        "is_callable":is_callable_parser,
         "key":key,
-        "choices":choices
+        "call_key":key.replace(cli.root_module_name ,cli.entry_name,1),
+        "choices":choices,
+        "actions":actions
     }
 
 
@@ -65,34 +106,49 @@ class PyconvcliApp(tk.Frame):
 
         text = tk.Label(master, text="Select a path from the dropdowns. When you hit a callable command it will give you more options")#tk.Text(master, height=1, font="TkDefaultFont 10")
         self.variable_a = tk.StringVar(self)
-        self.variable_b = tk.StringVar(self)
-        self.variable_a.set(self.options['name'])
-        self.variables=[self.variable_a,self.variable_b]
-        self.first_command = tk.OptionMenu(self, self.variable_b, *map_(self.options["choices"], 'name'))
-        self.dropdown_map[str(self.variable_b)]=self.first_command
-        self.variable_b.trace('w', self.update_options)
+        self.variable_a.set(self.cli.entry_name)#options['name'])
+
+        self.variable_a.trace('w', self.clear_to_root)
+        self.variables=[self.variable_a]
+        self.root_module_dd = tk.OptionMenu(self, self.variable_a, *[self.cli.entry_name])
+        self.dropdown_map[str(self.variable_a)]=self.root_module_dd
+
         self.run_command_button = tk.Button(master, text ="Run Command", command = self.run_function)
         self.copy_command_button = tk.Button(master, text ="Copy Command to Clipboard", command = self.copy_command)
 
 
         text.pack(side=tk.TOP)
-
-        self.first_command.pack(side=tk.LEFT)
+        self.root_module_dd.pack(side=tk.LEFT)
+        # self.root_module_dd.configure(state='disabled')
 
         self.pack()
+        self.update_options(str(self.variable_a))
 
-
+    def clear_to_root(self, *args):
+        self.clear_form_widgets()
+        self.remove_variables(self.variables[1:])
+        self.update_options(str(self.variable_a))
 
     def get_path_from_widgets(self):
         command_list = []
+        action_included=False
         for item in self.form_widgets:
             variable_entry=self.form_widgets[item]['variable']
+
             if 'action' in self.form_widgets[item]:
                 action = self.form_widgets[item]['action']
                 variable_value = variable_entry.get()
                 if variable_value:
                     command_list.append(f'--{item}')
                 if action=="store_true" or action =='store_false' or action =='store_const':
+                    continue
+            if 'action_option' in self.form_widgets[item]:
+                action_included=True
+                action_nargs = self.form_widgets[item]['action_nargs']
+                if action_nargs==0:
+                    variable_value = variable_entry.get()
+                    if variable_value:
+                        command_list.append(f'--{item}')
                     continue
             if isinstance(variable_entry,list):
                 list_of_values = map_(variable_entry,lambda value:value.get())
@@ -107,11 +163,14 @@ class PyconvcliApp(tk.Frame):
                     command_list.append(f'--{item}')
                     command_list.append(value)
 
-        return command_list
+        return (command_list,action_included)
 
     def run_function(self, *args, **kwargs):
-        sys.argv=map_(self.variables,lambda variable:variable.get())
-        command_list = self.get_path_from_widgets()
+        mapped_result=map_(self.variables,lambda variable:variable.get())
+        if '' in mapped_result:
+            mapped_result.remove('')
+        sys.argv = mapped_result
+        command_list,includes_actions = self.get_path_from_widgets()
         for command in command_list:
             sys.argv.append(command)
         args=[self.cli.entry_name ,*sys.argv[1:]]
@@ -127,26 +186,40 @@ class PyconvcliApp(tk.Frame):
     def copy_command(self):
         self.master.clipboard_clear()
         path_values = map_(self.variables,lambda variable:variable.get())[1:]
-        command_list = self.get_path_from_widgets()
-        sys.argv=[self.cli.root_module_name,*path_values, *command_list]
+        if '' in path_values:
+            path_values.remove('')
+        command_list,includes_actions = self.get_path_from_widgets()
+        sys.argv= [self.cli.root_module_name,*path_values, *command_list]
         for command in command_list:
             path_values.append(shlex.quote(command))
         with_entry = ' '.join([self.cli.entry_name,*path_values])
 
-
+        std_out = io.StringIO()
         std_err = io.StringIO()
-        with redirect_stderr(std_err):
-            try:
-                self.cli.parse_args()
-                self.master.clipboard_append(with_entry)
-                self.master.update()
-                label = tk.Label(self.master, text=f'"{with_entry}" copied to clipboard')
-                label.pack()
-                self.master.after(2000, lambda widget: widget.pack_forget(), label)
-            except Exception as e:
-                messagebox.showerror("Errors", std_err.getvalue())
-            except SystemExit as e:
-                messagebox.showerror("Errors", std_err.getvalue())
+        with redirect_stdout(std_out):
+            with redirect_stderr(std_err):
+                try:
+                    # If there are actions included we don't want people accidentally calling them on their machine because actions are called at parse time
+                    if not includes_actions:
+                        self.cli.parse_args()
+                    self.master.clipboard_append(with_entry)
+                    self.master.update()
+                    label = tk.Label(self.master, text=f'"{with_entry}" copied to clipboard')
+                    label.pack()
+                    self.master.after(2000, lambda widget: widget.pack_forget(), label)
+                    if includes_actions:
+                        action_info = tk.Label(self.master, text=f'you have actions selected. actions run at parse time so to keep you from unintentionally running code we did not parse your params')
+                        action_info.pack()
+                        self.master.after(5000, lambda widget: widget.pack_forget(), action_info)
+                except Exception as e:
+                    messagebox.showerror("Errors", std_err.getvalue())
+                except SystemExit as e:
+                    the_err = std_err.getvalue()
+                    the_out = std_out.getvalue()
+                    if not the_err and the_out:
+                        messagebox.showerror("Errors", the_out)
+                    else:
+                        messagebox.showerror("Errors", the_err)
 
 
 
@@ -169,12 +242,13 @@ class PyconvcliApp(tk.Frame):
     def add_dropdown_option(self, selected_object):
         new_variable = tk.StringVar(self)
         new_variable.trace('w', self.update_options)
-        new_option_menu = tk.OptionMenu(self, new_variable, *map_(selected_object["choices"],'name'))
+        new_option_menu = tk.OptionMenu(self, new_variable, *map_(selected_object["choices"],lambda item:item['name']))
         self.dropdown_map[str(new_variable)]=new_option_menu
         self.variables.append(new_variable)
         new_option_menu.pack(side=tk.LEFT)
 
     def add_another_arg(self,form_widget_object,choices=None,file_selector=None):
+
         variable = tk.StringVar()
         if file_selector:
             widget = tk.Button(form_widget_object['row'])
@@ -281,10 +355,14 @@ class PyconvcliApp(tk.Frame):
             button_explore = tk.Button(row)
             button_explore.config(text="Browse Files", command=lambda : self.browse_files(variable,button_explore))
             self.form_widgets[key]={'variable':variable,
+                                    'label':tk.Label(row,text=key),
                                     'widget':button_explore,
                                     'row':row}
+
+            self.form_widgets[key]['label'].pack(side=tk.LEFT)
             button_explore.pack()
             row.pack()
+            return
 
         if "choices" in param.annotation.kwargs:
             row = tk.Frame(self.master)
@@ -307,7 +385,7 @@ class PyconvcliApp(tk.Frame):
             self.form_widgets[key]['label'].pack(side=tk.LEFT)
             self.form_widgets[key]['widget'].pack(side=tk.RIGHT)
 
-    def add_field_to_form(self,key,param):
+    def add_field_to_form(self,key,param,parser):
         if param.annotation.__class__==ParserArgType:
             self.add_custom_annotated_field_to_form(key,param)
 
@@ -326,7 +404,7 @@ class PyconvcliApp(tk.Frame):
     def clear_form_widgets(self):
         for item in self.form_widgets:
             for widget in self.form_widgets[item]:
-                if widget!='variable' and widget!='action':
+                if widget!='variable' and widget!='action' and widget!='action_option' and widget!='action_name' and widget!='action_nargs':
                     value = self.form_widgets[item][widget]
                     if isinstance(value, list):
                         for form_widget in value:
@@ -343,6 +421,97 @@ class PyconvcliApp(tk.Frame):
                             self.form_widgets[item][widget].pack_forget()
         self.form_widgets={}
 
+    def getLastSelectedVariable(self):
+        variable = find_last(self.variables, lambda variable: variable.get())
+        return variable.get()
+
+    def add_actions_to_form(self,callable_item):
+
+        if 'actions' in callable_item:
+            self.run_command_button.pack()
+            self.copy_command_button.pack()
+            if len(callable_item['actions'])>0:
+                row = tk.Frame(self.master)
+                actions_label=tk.Label(row, text="available actions:")
+                actions_label.pack(side=tk.LEFT)
+            for action in callable_item['actions']:
+
+                self.form_widgets[action['name']]={'action_name':action['name'],
+                                              'action_option':action['action_option'],
+                                               'action_nargs':action['action_nargs'] if 'action_nargs' in action else 0,
+                                              'row':row}
+                nargs =  self.form_widgets[action['name']]['action_nargs']
+                if nargs==0:
+                    variable = tk.IntVar()
+                    variable.set(0)
+                    self.form_widgets[action['name']]['variable']=variable
+                    self.form_widgets[action['name']]['widget']=tk.Checkbutton(row, text=action['action_option'], variable=variable)
+                elif nargs=='*':
+                    internal_frame = tk.Frame(row)
+                    add_button_command = lambda key=action['name'] : self.add_another_arg(self.form_widgets[key])
+                    add_entry_button=tk.Button(internal_frame, text ="add argument", command =add_button_command)
+                    variable = tk.StringVar()
+                    self.form_widgets[action['name']]['row']=internal_frame
+                    self.form_widgets[action['name']]['label']=tk.Label(internal_frame, text=action['action_option'])
+                    self.form_widgets[action['name']]['variable']=[variable]
+                    self.form_widgets[action['name']]['widget']=[tk.Entry(internal_frame,textvariable=variable)]
+                    self.form_widgets[action['name']]['button']=add_entry_button
+                    self.form_widgets[action['name']]['label'].pack(side=tk.LEFT)
+                    self.form_widgets[action['name']]['button'].pack(side=tk.RIGHT)
+                    internal_frame.pack()
+                else:
+                    variable_list = []
+                    widget_list = []
+                    for index in range(nargs):
+                        variable = tk.StringVar()
+                        variable_list.append(variable)
+                        widget_list.append(tk.Entry(row,textvariable=variable))
+                    self.form_widgets[action['name']]['label']=tk.Label(row, text=action['action_option'])
+                    self.form_widgets[action['name']]['variable']=variable_list
+                    self.form_widgets[action['name']]['widget']=widget_list
+                    self.form_widgets[action['name']]['label'].pack(side=tk.LEFT)
+                row.pack()
+                if isinstance(self.form_widgets[action['name']]['widget'],list):
+                    for widget in self.form_widgets[action['name']]['widget']:
+                        widget.pack(side=tk.LEFT)
+                else:
+                    self.form_widgets[action['name']]['widget'].pack(side=tk.LEFT)
+
+    def display_help_text(self, parser):
+        std_out = io.StringIO()
+        with redirect_stdout(std_out):
+            parser['parser'].print_help()
+        self.usage=tk.Label(self.master, text=std_out.getvalue())
+        self.usage.pack()
+
+    def update_displayed_options(self,selected_object,changed_variable):
+        if 'is_callable' in selected_object and selected_object['is_callable']:
+            self.dropdown_map[str(changed_variable)].config(font='TkDefaultFont 20')
+            if self.variables[-1].get():
+                key='.'.join(map_(self.variables,lambda variable:variable.get())[:-1]).replace(self.cli.entry_name,self.cli.root_module_name,1)
+                action_key='.'.join(map_(self.variables,lambda variable:variable.get())).replace(self.cli.entry_name,self.cli.root_module_name,1)
+            else:
+                key = '.'.join(map_(self.variables,lambda variable:variable.get())[:-2]).replace(self.cli.entry_name,self.cli.root_module_name,1)
+                action_key = '.'.join(map_(self.variables,lambda variable:variable.get())[:-1]).replace(self.cli.entry_name,self.cli.root_module_name,1)
+            if key in self.cli.parsers:
+                parser = self.cli.parsers[key]
+                last_selected_variable = self.getLastSelectedVariable()
+                if 'callables' in parser and  last_selected_variable in parser['callables']:
+                    callable_item =parser['callables'][self.getLastSelectedVariable()]
+                if self.variables[-1].get() or 'function_name' in selected_object:
+                    inspect_function = inspect.signature(get(callable_item['class_ref'],callable_item['function_name']))
+                    self.run_command_button.pack()
+                    self.copy_command_button.pack()
+                    for key in inspect_function.parameters:
+                        if key!='self':
+                            self.add_field_to_form(key,inspect_function.parameters[key],parser)
+            if action_key in self.cli.parsers:
+                parser = self.cli.parsers[action_key]
+            else:
+                parser = parser['callables'][self.getLastSelectedVariable()]
+            self.add_actions_to_form(selected_object)
+
+            self.display_help_text(parser)
     def update_options(self, *args):
         self.run_command_button.pack_forget()
         self.copy_command_button.pack_forget()
@@ -358,30 +527,13 @@ class PyconvcliApp(tk.Frame):
             if str(variable)==args[0]:
                 changed_variable=variable
                 break
-        if changed_variable == self.variables[-1]:
+        if changed_variable == find_last(self.variables,lambda varaible: variable.get()) :
             selected_object=self.get_selected_object()
             if selected_object and "choices" in selected_object:
-
                 self.dropdown_map[str(changed_variable)].config(font='TkDefaultFont')
                 self.add_dropdown_option(selected_object)
-            else:
-                if 'is_callable' in selected_object and selected_object['is_callable']:
-                    self.dropdown_map[str(changed_variable)].config(font='TkDefaultFont 20')
-                    key = '.'.join(map_(self.variables,lambda variable:variable.get())[:-1])
-                    if key in self.cli.parsers:
-                        parser = self.cli.parsers[key]
-                        callable_item =parser['callables'][self.variables[-1].get()]
-                        inspect_function = inspect.signature(get(callable_item['class_ref'],callable_item['function_name']))
-                        self.run_command_button.pack()
-                        self.copy_command_button.pack()
-                        for key in inspect_function.parameters:
-                            if key!='self':
-                                self.add_field_to_form(key,inspect_function.parameters[key])
-                        std_out = io.StringIO()
-                        with redirect_stdout(std_out):
-                            callable_item['parser'].print_help()
-                        self.usage=tk.Label(self.master, text=std_out.getvalue())
-                        self.usage.pack()
+            self.update_displayed_options(selected_object,changed_variable)
+
 
 
         else:
@@ -391,21 +543,7 @@ class PyconvcliApp(tk.Frame):
             selected_object=self.get_selected_object()
             if selected_object and "choices" in selected_object:
                 self.add_dropdown_option(selected_object)
-            if 'is_callable' in selected_object and selected_object['is_callable']:
-                self.dropdown_map[str(changed_variable)].config(font='TkDefaultFont 20')
-                key = '.'.join(map_(self.variables,lambda variable:variable.get())[:-1])
-                if key in self.cli.parsers:
-                    parser = self.cli.parsers[key]
-                    callable_item =parser['callables'][self.variables[-1].get()]
-                    inspect_function = inspect.signature(get(callable_item['class_ref'],callable_item['function_name']))
-                    self.run_command_button.pack()
-                    self.copy_command_button.pack()
-                    for key in inspect_function.parameters:
-                        if key!='self':
-                            self.add_field_to_form(key,inspect_function.parameters[key])
-                    std_out = io.StringIO()
-                    with redirect_stdout(std_out):
-                        callable_item['parser'].print_help()
-                    self.usage=tk.Label(self.master, text=std_out.getvalue())
-                    self.usage.pack()
+            self.update_displayed_options(selected_object,changed_variable)
+
+
 
