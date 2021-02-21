@@ -43,7 +43,7 @@ optional arguments:
 ```
 
 #### step 3
-in order to create a command you need to create a class in your project that either ends with _CLI in the name or _CLI_ROOT. if it ends with cli the command will be the file path from the root of your project followed by the function name. If it is _CLI_ROOT it will be the function name followed by the root command of your project
+in order to create a command you need to create a class in your project that either ends with _CLI in the name or _CLI_ROOT. if it ends with cli the command will be the file path from the root of your project followed by the function name. If it is _CLI_ROOT it will be the function name followed by the root command of your project.
 
 This is an example of the code to add a root command
 ```
@@ -76,10 +76,48 @@ class Alternative_CLI_ROOT():
             time.sleep((60/rythem))
 ```
 You can also optionally add a _cli_path attribut to the class with a value of the string array you want to declare the path as. This will have a higher priority and allow you to declare the path to your action set.
+```
+class Testing_CLI():
+    _cli_path=['here','testing']
+    def testCommand(self,arg1:int,arg2:str,arg3:ParserArgType(type=str,choices=['exclusive','inclusive','indecisive'])):
+        print(f'arg1:{arg1}, arg2:{arg2}, arg3:{arg3}')
+```
 
-### Plans for the future. 
+If you need a group created you can creat them through an annotation like this. Note that you tie the params to the group by matching the name, and the group attribute in the parser arg type.
+```
+class Groups_CLI():
+    _cli_path=['here','custom','groups']
+    @ArgGroupsDecorator(ParserArgGroupType(name='required',description="my required group"), ParserArgMutuallyExclusiveType(name='exclusive',required=True))
+    def groupsCommand(self,arg1:ParserArgType(group='required'),arg2:ParserArgType(group='exclusive'),arg3:ParserArgType(group='exclusive')):
+        print("groups command called")
+```
+If you want to create an action for a parser that does a separate piece of work you can use the action annotation as follows
+```
+ class Utility_CLI():
+    _cli_path=[]
+    
+    @ActionArguement()
+    def version(self):
+        print(pkg_resources.get_distribution("pyconvcli").version)
+```
+the previous example appends a --version action to the root of your cli. this runs independently or could be thought of as in parallel with any other actions you call in the same parser.
+for example if you have the code3 belo and ran the test command with the additional --version parameter the version function would activate when your parser runs and then the testCommand function would run after.
 
-I would consider putting together an object written to a file representing the cli structure at build time of your project using a cmdclass in your setup.py. This would allow us to create the parsers at runtime without loading or inspecting any classes and would allow you to run your project without importing anything but your entrypoint. The benefits of this would be rather small unles you have a very large project.
+```
+class Utility_CLI():
+    _cli_path=[]
+    
+    @ActionArguement()
+    def version(self):
+    print(pkg_resources.get_distribution("pyconvcli").version)
+     
+    def testCommand(self,arg1:int,arg2:str,arg3:ParserArgType(type=str,choices=['exclusive','inclusive','indecisive'])):
+        print(f'arg1:{arg1}, arg2:{arg2}, arg3:{arg3}')
+```
+
+### The App ###
+
+after installing your cli you will be able to run it as an application as well by running the entrypoint command to run your cli with the -app postfix. This will open a gui that will allow you to select your commands from dropdowns and enter values in form fields. You will have the option of calling the command from the app or copying it to the clipboard to be pasted into the terminal later. The app handles any needed escaping of characters for your call.
 
 
 ### Who do I talk to? ###
